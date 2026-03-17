@@ -14,11 +14,11 @@ async function getCached(postId, userProfileHash) {
     const raw = result[key];
     if (!raw || typeof raw.classification !== "string")
         return null;
-    return raw;
+    return { classification: raw.classification, reasoning: typeof raw.reasoning === "string" ? raw.reasoning : "" };
 }
-async function setCached(postId, userProfileHash, classification) {
+async function setCached(postId, userProfileHash, result) {
     const key = cacheKey(postId, userProfileHash);
-    await browser.storage.local.set({ [key]: classification });
+    await browser.storage.local.set({ [key]: result });
 }
 async function classifyViaApi(apiBase, payload) {
     const url = apiBase.replace(/\/$/, "") + "/classify";
@@ -32,24 +32,24 @@ async function classifyViaApi(apiBase, payload) {
     }
     const data = (await res.json());
     if (!data.classification) {
-        return { classification: "neutral" };
+        return { classification: "neutral", reasoning: "" };
     }
-    return {
-        classification: data.classification === "highlight" ||
-            data.classification === "hide" ||
-            data.classification === "neutral"
-            ? data.classification
-            : "neutral",
-    };
+    const classification = data.classification === "highlight" ||
+        data.classification === "hide" ||
+        data.classification === "neutral"
+        ? data.classification
+        : "neutral";
+    const reasoning = typeof data.reasoning === "string" ? data.reasoning : "";
+    return { classification, reasoning };
 }
 browser.runtime.onMessage.addListener((message, _sender) => {
     const msg = message;
     if (msg?.type !== "classify" || !msg.postId || !msg.userProfileHash) {
-        return Promise.resolve({ classification: "neutral" });
+        return Promise.resolve({ classification: "neutral", reasoning: "" });
     }
     const apiBase = msg.apiBase || DEFAULT_API_BASE;
     if (!apiBase) {
-        return Promise.resolve({ classification: "neutral" });
+        return Promise.resolve({ classification: "neutral", reasoning: "" });
     }
     return (async () => {
         const cached = await getCached(msg.postId, msg.userProfileHash);

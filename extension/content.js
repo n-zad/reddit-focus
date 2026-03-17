@@ -6,8 +6,7 @@
  */
 const DATA_POST_ID = "data-reddit-focus-post-id";
 const DATA_CLASSIFIED = "data-reddit-focus-classified";
-const ATTR_HIGHLIGHT = "reddit-focus-highlight";
-const ATTR_HIDDEN = "reddit-focus-hidden";
+const BLURB_CLASS = "reddit-focus-blurb";
 const DEFAULT_API_BASE = "https://reddit-filter-api.nickzadbayati.workers.dev";
 /** Simple stable hash for user profile (for cache key). */
 function hashUserProfile(profile) {
@@ -85,15 +84,24 @@ function getPostElements() {
     const fallback = document.querySelectorAll('[data-testid="post-container"], article[data-testid]');
     return Array.from(fallback);
 }
-function applyClassification(el, classification) {
+function ensureBlurbContainer(postEl) {
+    let container = postEl.nextElementSibling;
+    if (!container || !container.classList.contains("reddit-focus-blurb-container")) {
+        container = document.createElement("div");
+        container.className = "reddit-focus-blurb-container";
+        postEl.insertAdjacentElement("afterend", container);
+    }
+    return container;
+}
+
+function applyClassification(el, classification, reasoning) {
     el.setAttribute(DATA_CLASSIFIED, classification);
-    el.classList.remove(ATTR_HIGHLIGHT, ATTR_HIDDEN);
-    if (classification === "highlight") {
-        el.classList.add(ATTR_HIGHLIGHT);
-    }
-    else if (classification === "hide") {
-        el.classList.add(ATTR_HIDDEN);
-    }
+    const container = ensureBlurbContainer(el);
+    const blurb = document.createElement("div");
+    blurb.className = BLURB_CLASS + " reddit-focus-blurb--" + classification;
+    blurb.textContent = reasoning || "No reasoning provided.";
+    container.innerHTML = "";
+    container.appendChild(blurb);
 }
 async function getStoredPrefs() {
     const o = await browser.storage.local.get(["apiBase", "userProfile"]);
@@ -110,8 +118,9 @@ async function classifyPost(postId, userProfileHash, payload, apiBase) {
         payload,
         apiBase,
     }));
-    const c = res?.classification;
-    return c === "highlight" || c === "hide" ? c : "neutral";
+    const classification = res?.classification === "highlight" || res?.classification === "hide" ? res.classification : "neutral";
+    const reasoning = typeof res?.reasoning === "string" ? res.reasoning : "";
+    return { classification, reasoning };
 }
 const processed = new Set();
 async function processPost(el) {
@@ -135,11 +144,11 @@ async function processPost(el) {
         user_profile: profile,
     };
     try {
-        const classification = await classifyPost(postId, userProfileHash, payload, apiUrl);
-        applyClassification(el, classification);
+        const { classification, reasoning } = await classifyPost(postId, userProfileHash, payload, apiUrl);
+        applyClassification(el, classification, reasoning);
     }
     catch {
-        applyClassification(el, "neutral");
+        applyClassification(el, "neutral", "");
     }
 }
 function processVisiblePosts() {

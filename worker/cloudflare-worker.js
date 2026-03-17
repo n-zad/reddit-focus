@@ -31,12 +31,12 @@ export default {
         body: JSON.stringify({
           model: "nvidia/nemotron-mini-4b-instruct",
           temperature: 0,
-          max_tokens: 60,
+          max_tokens: 120,
           messages: [
             {
               role: "system",
               content:
-                'Classify Reddit posts for a user. Output JSON only: {"classification":"highlight|hide|neutral"}',
+                'Classify Reddit posts for a user. Output JSON only with two fields: "classification" (one of: highlight, hide, neutral) and "reasoning" (a short one-sentence explanation). Example: {"classification":"highlight","reasoning":"Matches user interest in programming."}',
             },
             {
               role: "user",
@@ -49,8 +49,21 @@ export default {
 
     const data = await response.json();
 
-    const output =
-      data.choices?.[0]?.message?.content || '{"classification":"neutral"}';
+    const raw = data.choices?.[0]?.message?.content || "{}";
+    let output;
+    try {
+      const start = raw.indexOf("{");
+      const end = raw.lastIndexOf("}");
+      const jsonStr = start >= 0 && end > start ? raw.slice(start, end + 1) : "{}";
+      const obj = JSON.parse(jsonStr);
+      const classification = ["highlight", "hide", "neutral"].includes(obj.classification)
+        ? obj.classification
+        : "neutral";
+      const reasoning = typeof obj.reasoning === "string" ? obj.reasoning : "";
+      output = JSON.stringify({ classification, reasoning });
+    } catch {
+      output = JSON.stringify({ classification: "neutral", reasoning: "" });
+    }
 
     return new Response(output, {
       headers: { "Content-Type": "application/json" },
