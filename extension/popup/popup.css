@@ -1,0 +1,68 @@
+.popup {
+  width: 320px;
+  padding: 16px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+}
+
+.popup h1 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: #1a1a1a;
+}
+
+.description {
+  color: #666;
+  margin: 0 0 16px;
+  line-height: 1.4;
+}
+
+.popup label {
+  display: block;
+  margin: 12px 0 4px;
+  font-weight: 600;
+  color: #333;
+}
+
+.popup input[type="url"],
+.popup textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.popup textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.popup #save {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: #ff6314;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+}
+
+.popup #save:hover {
+  background: #e55a10;
+}
+
+.popup .status {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #0a0;
+  min-height: 1.2em;
+}
+
+.popup .status.error {
+  color: #c00;
+}

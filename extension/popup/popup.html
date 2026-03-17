@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reddit Focus</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <h1>Reddit Focus</h1>
+    <p class="description">Classify posts by your interests. Set your API URL and interests below.</p>
+
+    <label for="api-base">Worker API URL</label>
+    <input type="url" id="api-base" placeholder="https://your-worker.workers.dev" />
+
+    <label for="likes">Likes (one per line or comma-separated)</label>
+    <textarea id="likes" rows="3" placeholder="e.g. programming, science, cooking"></textarea>
+
+    <label for="dislikes">Dislikes (one per line or comma-separated)</label>
+    <textarea id="dislikes" rows="2" placeholder="e.g. politics, spoilers"></textarea>
+
+    <button id="save">Save</button>
+    <p id="status" class="status"></p>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

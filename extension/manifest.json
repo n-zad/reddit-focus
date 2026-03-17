@@ -1,0 +1,30 @@
+{
+  "manifest_version": 2,
+  "name": "Reddit Focus",
+  "version": "1.0.0",
+  "description": "Improves Reddit feeds by classifying posts based on your interests using an LLM.",
+  "permissions": [
+    "storage",
+    "https://www.reddit.com/*",
+    "https://old.reddit.com/*",
+    "https://*/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.reddit.com/*",
+        "https://old.reddit.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_action": {
+    "default_title": "Reddit Focus",
+    "default_popup": "popup/popup.html"
+  }
+}

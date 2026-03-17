@@ -1,0 +1,13 @@
+/* Reddit Focus – content script styles */
+
+/* Emphasize posts classified as highlight */
+.reddit-focus-highlight {
+  border-left: 4px solid #ff6314 !important;
+  background-color: rgba(255, 99, 20, 0.06) !important;
+  border-radius: 0 8px 8px 0;
+}
+
+/* Collapse/remove posts classified as hide */
+.reddit-focus-hidden {
+  display: none !important;
+}
