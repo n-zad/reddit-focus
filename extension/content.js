@@ -8,6 +8,11 @@ const DATA_POST_ID = "data-reddit-focus-post-id";
 const DATA_CLASSIFIED = "data-reddit-focus-classified";
 const BLURB_CLASS = "reddit-focus-blurb";
 const DEFAULT_API_BASE = "https://reddit-filter-api.nickzadbayati.workers.dev";
+const POST_BASE_CLASS = "reddit-focus-post";
+const POST_HIDE_CLASS = "reddit-focus-post--hide";
+const POST_HIGHLIGHT_CLASS = "reddit-focus-post--highlight";
+const POST_REVEALED_CLASS = "reddit-focus-post--revealed";
+const DATA_REVEAL_BOUND = "data-reddit-focus-reveal-bound";
 /** Simple stable hash for user profile (for cache key). */
 function hashUserProfile(profile) {
     const str = "likes:" +
@@ -96,6 +101,34 @@ function ensureBlurbContainer(postEl) {
 
 function applyClassification(el, classification, reasoning) {
     el.setAttribute(DATA_CLASSIFIED, classification);
+    // Visual treatment on the post itself
+    el.classList.add(POST_BASE_CLASS);
+    el.classList.remove(POST_HIDE_CLASS, POST_HIGHLIGHT_CLASS);
+    if (classification === "hide") {
+        el.classList.add(POST_HIDE_CLASS);
+        // Allow user to reveal hidden posts on click (one-time binding).
+        if (!el.hasAttribute(DATA_REVEAL_BOUND)) {
+            el.setAttribute(DATA_REVEAL_BOUND, "1");
+            el.addEventListener("click", (e) => {
+                if (!el.classList.contains(POST_HIDE_CLASS))
+                    return;
+                // If still hidden, first click should only reveal (no navigation/open).
+                if (!el.classList.contains(POST_REVEALED_CLASS)) {
+                    el.classList.add(POST_REVEALED_CLASS);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Some handlers on Reddit are attached at the same node; block those too.
+                    e.stopImmediatePropagation();
+                }
+            }, { capture: true });
+        }
+    }
+    else if (classification === "highlight") {
+        el.classList.add(POST_HIGHLIGHT_CLASS);
+    }
+    else {
+        el.classList.remove(POST_REVEALED_CLASS);
+    }
     const container = ensureBlurbContainer(el);
     const blurb = document.createElement("div");
     blurb.className = BLURB_CLASS + " reddit-focus-blurb--" + classification;
@@ -131,8 +164,10 @@ async function processPost(el) {
     processed.add(postId);
     const { apiBase, userProfile } = await getStoredPrefs();
     const apiUrl = (apiBase && apiBase.trim()) ? apiBase.trim() : DEFAULT_API_BASE;
-    if (!apiUrl)
+    if (!apiUrl) {
+        applyClassification(el, "neutral", "Classification not attempted (API base not configured).");
         return;
+    }
     const profile = userProfile ?? { likes: [], dislikes: [] };
     const userProfileHash = hashUserProfile(profile);
     const { subreddit, title, text_excerpt, image_url } = extractPostData(el);
@@ -144,11 +179,16 @@ async function processPost(el) {
         user_profile: profile,
     };
     try {
-        const { classification, reasoning } = await classifyPost(postId, userProfileHash, payload, apiUrl);
+        // Indicate that a request is being sent for this post.
+        applyClassification(el, "neutral", "Classifying post…");
+        let { classification, reasoning } = await classifyPost(postId, userProfileHash, payload, apiUrl);
+        if (!reasoning) {
+            reasoning = "Classifier returned a label but no explanation.";
+        }
         applyClassification(el, classification, reasoning);
     }
     catch {
-        applyClassification(el, "neutral", "");
+        applyClassification(el, "neutral", "Classification failed (API error or timeout).");
     }
 }
 function processVisiblePosts() {
